@@ -3,17 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 
 const Homepage  = lazy(() => import('./web/Homepage/Homepage'));
-const Login     = lazy(() => import('./web/Login/Login'));
-const Verify    = lazy(() => import('./web/Verify/Verify'));
-const Directory = lazy(() => import('./web/Directory/Directory'));
-const Dashboard = lazy(() => import('./web/Dashboard/Dashboard'));
-const Resources = lazy(() => import('./web/Resources/Resources'));
 
-const Staff     = lazy(() => import('./web/Dashboard/Staff/Staff'));
-const Roles     = lazy(() => import('./web/Dashboard/Roles/Roles'));
-const Shifts    = lazy(() => import('./web/Dashboard/Shifts/Shifts'));
-const Bans      = lazy(() => import('./web/Dashboard/Bans/Bans'));
-const Settings  = lazy(() => import('./web/Dashboard/Settings/Settings'));
 
 function PageSpinner() {
   return (
