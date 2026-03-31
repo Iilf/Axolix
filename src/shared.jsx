@@ -1,64 +1,51 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js'
 
-// ─── Supabase ───────────────────────────────────────────────────────────────
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// ── Environment ────────────────────────────────────────────────────────────
+export const SUPABASE_URL    = import.meta.env.VITE_SUPABASE_URL    ?? ''
+export const SUPABASE_ANON   = import.meta.env.VITE_SUPABASE_ANON   ?? ''
+export const ORACLE_BASE_URL = import.meta.env.VITE_ORACLE_BASE_URL ?? 'http://localhost:3001'
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// ── Supabase client (direct reads) ────────────────────────────────────────
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-// ─── Oracle API ─────────────────────────────────────────────────────────────
-export const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3000';
-
-export async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(options.headers ?? {}),
-    },
+// ── Oracle proxy fetch helper (writes / Discord / Roblox) ─────────────────
+export async function oracleFetch(path, options = {}) {
+  const res = await fetch(`${ORACLE_BASE_URL}${path}`, {
     credentials: 'include',
-  });
+    headers: { 'Content-Type': 'application/json', ...options.headers },
+    ...options,
+  })
   if (!res.ok) {
-    const err = await res.json().catch(() => ({ error: 'Request failed' }));
-    throw new Error(err.error ?? 'Request failed');
+    const err = await res.json().catch(() => ({ message: res.statusText }))
+    throw new Error(err.message ?? 'Request failed')
   }
-  return res.json();
+  return res.json()
 }
 
-// ─── Auth helpers ────────────────────────────────────────────────────────────
-export async function getSession() {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+// ── Roblox username cache (24h) ────────────────────────────────────────────
+export const ROBLOX_CACHE_TTL_MS = 24 * 60 * 60 * 1000
+
+export function isRobloxCacheStale(updatedAt) {
+  if (!updatedAt) return true
+  return Date.now() - new Date(updatedAt).getTime() > ROBLOX_CACHE_TTL_MS
 }
 
-export async function getUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  return user;
+// ── Misc helpers ───────────────────────────────────────────────────────────
+export function formatDuration(seconds) {
+  if (!seconds) return '0m'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
 }
 
-// ─── Roblox helpers (all go through Oracle) ──────────────────────────────────
-export async function fetchRobloxUser(robloxId) {
-  return apiFetch(`/roblox/user/${robloxId}`);
+export function relativeTime(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const minutes = Math.floor(diff / 60_000)
+  if (minutes < 1)  return 'just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24)   return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  return `${days}d ago`
 }
-
-export async function fetchRobloxAvatar(robloxId) {
-  return apiFetch(`/roblox/avatar/${robloxId}`);
-}
-
-// ─── Theme constants ─────────────────────────────────────────────────────────
-export const COLORS = {
-  bg0:      '#0d0f1a',
-  bg1:      '#13162b',
-  bg2:      '#1a1e36',
-  bg3:      '#20254a',
-  purple:   '#7c5cfc',
-  purple2:  '#9b82fd',
-  text1:    '#e8e9f0',
-  text2:    '#8b8fa8',
-  text3:    '#555a75',
-  border:   'rgba(255,255,255,0.07)',
-  border2:  'rgba(255,255,255,0.12)',
-  green:    '#34d399',
-  red:      '#f87171',
-  amber:    '#fbbf24',
-};
