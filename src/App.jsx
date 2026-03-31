@@ -1,56 +1,40 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
-import NavBar from './components/NavBar.jsx'
+import NavBar, { useTheme } from './components/NavBar.jsx'
 
 // ── Lazy page imports ──────────────────────────────────────────────────────
-const Homepage   = lazy(() => import('./web/home/Homepage.jsx'))
+const Homepage  = lazy(() => import('./web/home/Homepage.jsx'))
+const Stub      = lazy(() => import('./web/stubs/Stub.jsx'))
 
-// Stubs — replace with real imports as pages are built
-const Login      = lazy(() => import('./web/stubs/Stub.jsx'))
-const Verify     = lazy(() => import('./web/stubs/Stub.jsx'))
-const Directory  = lazy(() => import('./web/stubs/Stub.jsx'))
-const Dashboard  = lazy(() => import('./web/stubs/Stub.jsx'))
-const Staff      = lazy(() => import('./web/stubs/Stub.jsx'))
-const Roles      = lazy(() => import('./web/stubs/Stub.jsx'))
-const Shifts     = lazy(() => import('./web/stubs/Stub.jsx'))
-const Bans       = lazy(() => import('./web/stubs/Stub.jsx'))
-const Settings   = lazy(() => import('./web/stubs/Stub.jsx'))
-const Resources  = lazy(() => import('./web/stubs/Stub.jsx'))
-
-// ── Fallback ───────────────────────────────────────────────────────────────
 function PageLoader() {
   return (
     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{ color: 'var(--color-text-muted)', fontSize: 14 }}>Loading…</span>
+      <span style={{ color: 'var(--text-2)', fontSize: 14 }}>Loading…</span>
     </div>
   )
 }
 
-// ── App ────────────────────────────────────────────────────────────────────
 export default function App() {
+  const [theme, setTheme] = useTheme()
+
   return (
     <>
-      <NavBar />
+      <NavBar theme={theme} setTheme={setTheme} />
       <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Public */}
-            <Route path="/"                                 element={<Homepage />} />
-            <Route path="/login"                            element={<Login />} />
-            <Route path="/verify"                           element={<Verify />} />
-            <Route path="/directory"                        element={<Directory />} />
-
-            {/* Dashboard */}
-            <Route path="/dashboard"                        element={<Dashboard />} />
-            <Route path="/dashboard/:guildId/staff"         element={<Staff />} />
-            <Route path="/dashboard/:guildId/roles"         element={<Roles />} />
-            <Route path="/dashboard/:guildId/shifts"        element={<Shifts />} />
-            <Route path="/dashboard/:guildId/bans"          element={<Bans />} />
-            <Route path="/dashboard/:guildId/settings"      element={<Settings />} />
-
-            {/* Resources */}
-            <Route path="/resources"                        element={<Resources />} />
-            <Route path="/resources/:section"               element={<Resources />} />
+            <Route path="/"                            element={<Homepage />} />
+            <Route path="/login"                       element={<Stub />} />
+            <Route path="/verify"                      element={<Stub />} />
+            <Route path="/directory"                   element={<Stub />} />
+            <Route path="/dashboard"                   element={<Stub />} />
+            <Route path="/dashboard/:guildId/staff"    element={<Stub />} />
+            <Route path="/dashboard/:guildId/roles"    element={<Stub />} />
+            <Route path="/dashboard/:guildId/shifts"   element={<Stub />} />
+            <Route path="/dashboard/:guildId/bans"     element={<Stub />} />
+            <Route path="/dashboard/:guildId/settings" element={<Stub />} />
+            <Route path="/resources"                   element={<Stub />} />
+            <Route path="/resources/:section"          element={<Stub />} />
           </Routes>
         </Suspense>
       </main>
