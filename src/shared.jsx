@@ -1,14 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 
-// ── Environment ────────────────────────────────────────────────────────────
-export const SUPABASE_URL    = import.meta.env.VITE_SUPABASE_URL    ?? ''
-export const SUPABASE_ANON   = import.meta.env.VITE_SUPABASE_ANON   ?? ''
+const SUPABASE_URL    = import.meta.env.VITE_SUPABASE_URL
+const SUPABASE_ANON   = import.meta.env.VITE_SUPABASE_ANON
 export const ORACLE_BASE_URL = import.meta.env.VITE_ORACLE_BASE_URL ?? 'http://localhost:3001'
 
-// ── Supabase client (direct reads) ────────────────────────────────────────
+if (!SUPABASE_URL || !SUPABASE_ANON) {
+  console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON — check Cloudflare Pages environment variables')
+}
+
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
 
-// ── Oracle proxy fetch helper (writes / Discord / Roblox) ─────────────────
 export async function oracleFetch(path, options = {}) {
   const res = await fetch(`${ORACLE_BASE_URL}${path}`, {
     credentials: 'include',
@@ -22,7 +23,6 @@ export async function oracleFetch(path, options = {}) {
   return res.json()
 }
 
-// ── Roblox username cache (24h) ────────────────────────────────────────────
 export const ROBLOX_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 export function isRobloxCacheStale(updatedAt) {
@@ -30,7 +30,6 @@ export function isRobloxCacheStale(updatedAt) {
   return Date.now() - new Date(updatedAt).getTime() > ROBLOX_CACHE_TTL_MS
 }
 
-// ── Misc helpers ───────────────────────────────────────────────────────────
 export function formatDuration(seconds) {
   if (!seconds) return '0m'
   const h = Math.floor(seconds / 3600)
