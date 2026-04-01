@@ -528,3 +528,78 @@ p  { font-size: 15px; line-height: 1.7; color: var(--text-2); }
   .feature-grid { grid-template-columns: 1fr; }
   .footer__inner { flex-direction: column; align-items: flex-start; gap: 4px; }
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   LOGIN PAGE
+══════════════════════════════════════════════════════════════ */
+.login-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-card__logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+}
+.login-card__logo svg { color: var(--primary); }
+
+.login-card__title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
+  color: var(--text);
+  margin-top: 4px;
+}
+
+.login-card__sub {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-2);
+  margin-top: -4px;
+}
+
+.login-card__discord-btn {
+  width: 100%;
+  justify-content: center;
+  padding: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  border-radius: var(--r-md);
+  margin-top: 4px;
+  transition: filter var(--t-fast);
+}
+.login-card__discord-btn:hover { filter: brightness(1.1); }
+
+.login-card__terms {
+  font-size: 12px;
+  color: var(--text-3);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* Discord button — fixed brand colour, not theme-dependent */
+.login-card__discord-btn {
+  background: #5865F2;
+}
+.login-card__discord-btn:hover {
+  filter: brightness(1.12);
+  background: #5865F2;
+}
