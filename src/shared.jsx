@@ -1,19 +1,67 @@
 import { createClient } from '@supabase/supabase-js'
+import { useState, useEffect } from 'react'
 
-const SUPABASE_URL    = import.meta.env.VITE_SUPABASE_URL
-const SUPABASE_ANON   = import.meta.env.VITE_SUPABASE_ANON
+// ── Supabase client ────────────────────────────────────────────────────────
+export const supabase = createClient(
+  import.meta.env.VITE_SUPABASE_URL,
+  import.meta.env.VITE_SUPABASE_ANON
+)
+
 export const ORACLE_BASE_URL = import.meta.env.VITE_ORACLE_BASE_URL ?? 'http://localhost:3001'
 
-if (!SUPABASE_URL || !SUPABASE_ANON) {
-  console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON — check Cloudflare Pages environment variables')
+// ── useAuth ────────────────────────────────────────────────────────────────
+// Returns { user, session, loading }
+// user.discordUsername, user.discordAvatar are pulled straight from
+// Supabase OAuth metadata — no extra fetch needed.
+export function useAuth() {
+  const [session, setSession] = useState(undefined) // undefined = loading
+  const [user, setUser]       = useState(null)
+
+  useEffect(() => {
+    // Get current session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session ?? null)
+      setUser(session ? buildUser(session) : null)
+    })
+
+    // Listen for login / logout
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session ?? null)
+      setUser(session ? buildUser(session) : null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  return {
+    session,
+    user,
+    loading: session === undefined,
+    signOut: () => supabase.auth.signOut(),
+  }
 }
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON)
+function buildUser(session) {
+  const meta = session.user.user_metadata ?? {}
+  return {
+    id:              session.user.id,
+    discordId:       meta.provider_id ?? meta.sub ?? null,
+    discordUsername: meta.full_name ?? meta.user_name ?? 'Unknown',
+    discordAvatar:   meta.avatar_url ?? null,
+    email:           session.user.email ?? null,
+  }
+}
 
+// ── Oracle fetch helper ────────────────────────────────────────────────────
 export async function oracleFetch(path, options = {}) {
+  const { data: { session } } = await supabase.auth.getSession()
   const res = await fetch(`${ORACLE_BASE_URL}${path}`, {
     credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+      ...options.headers,
+    },
     ...options,
   })
   if (!res.ok) {
@@ -23,6 +71,7 @@ export async function oracleFetch(path, options = {}) {
   return res.json()
 }
 
+// ── Roblox cache ───────────────────────────────────────────────────────────
 export const ROBLOX_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 export function isRobloxCacheStale(updatedAt) {
@@ -30,6 +79,7 @@ export function isRobloxCacheStale(updatedAt) {
   return Date.now() - new Date(updatedAt).getTime() > ROBLOX_CACHE_TTL_MS
 }
 
+// ── Misc helpers ───────────────────────────────────────────────────────────
 export function formatDuration(seconds) {
   if (!seconds) return '0m'
   const h = Math.floor(seconds / 3600)
