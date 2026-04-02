@@ -1,34 +1,59 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Plus, Users, Clock, ShieldCheck, Settings, ChevronRight, RefreshCw } from 'lucide-react'
+import { LayoutDashboard, Plus, Settings, ChevronRight, RefreshCw, Shield, Star } from 'lucide-react'
 import { useAuth, supabase } from '../../shared.jsx'
 
 // ── Server card ────────────────────────────────────────────────────────────
-function ServerCard({ server, onClick }) {
+function ServerCard({ server, role, onClick }) {
   return (
-    <button className="dashboard-server-card card" onClick={onClick}>
-      <div className="dashboard-server-card__logo">
+    <button className="server-card" onClick={onClick}>
+
+      {/* Banner */}
+      <div className="server-card__banner">
+        {server.banner_url
+          ? <img src={server.banner_url} alt="" className="server-card__banner-img" />
+          : <div className="server-card__banner-fallback" />
+        }
+      </div>
+
+      {/* Logo */}
+      <div className="server-card__logo">
         {server.logo_url
           ? <img src={server.logo_url} alt={server.name} />
           : <span>{server.name.charAt(0).toUpperCase()}</span>
         }
       </div>
-      <div className="dashboard-server-card__info">
-        <p className="dashboard-server-card__name">{server.name}</p>
-        <p className="dashboard-server-card__id">ID: {server.guild_id}</p>
+
+      {/* Info */}
+      <div className="server-card__body">
+        <div className="server-card__top">
+          <p className="server-card__name">{server.name}</p>
+          <ChevronRight size={14} className="server-card__arrow" />
+        </div>
+
+        {/* Role badge */}
+        {role && (
+          <div className="server-card__role" style={{ '--role-color': role.color ?? 'var(--primary)' }}>
+            {role.rank_name}
+          </div>
+        )}
+
+        {server.description && (
+          <p className="server-card__desc">{server.description}</p>
+        )}
       </div>
-      <ChevronRight size={16} style={{ color: 'var(--text-3)', marginLeft: 'auto', flexShrink: 0 }} />
+
     </button>
   )
 }
 
-// ── No servers prompt ──────────────────────────────────────────────────────
+// ── No servers ─────────────────────────────────────────────────────────────
 function NoServers() {
   return (
     <div className="dashboard-empty">
-      <LayoutDashboard size={32} strokeWidth={1.5} style={{ color: 'var(--text-3)' }} />
+      <LayoutDashboard size={32} strokeWidth={1.5} />
       <h3>No servers yet</h3>
-      <p>Add the Axolix bot to your Discord server to get started.</p>
+      <p>You are not a staff member on any server using Axolix.</p>
       <a
         className="btn btn-primary"
         href="https://discord.com/oauth2/authorize"
@@ -36,7 +61,7 @@ function NoServers() {
         rel="noreferrer"
       >
         <Plus size={15} />
-        Add to Discord
+        Add Axolix to Discord
       </a>
     </div>
   )
@@ -44,23 +69,34 @@ function NoServers() {
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user }  = useAuth()
   const navigate  = useNavigate()
-  const [servers, setServers]   = useState([])
-  const [loading, setLoading]   = useState(true)
-  const [error,   setError]     = useState(null)
+  const [entries, setEntries] = useState([])   // [{ server, role }]
+  const [loading, setLoading] = useState(true)
+  const [error,   setError]   = useState(null)
 
-  async function loadServers() {
+  async function load() {
     setLoading(true)
     setError(null)
     try {
+      // Fetch servers the current user is an active staff member of,
+      // joined with their role on each server
       const { data, error } = await supabase
-        .from('servers')
-        .select('id, guild_id, name, logo_url, description')
-        .order('name')
+        .from('staff_members')
+        .select(`
+          server:servers ( id, guild_id, name, logo_url, banner_url, description ),
+          role:staff_roles ( rank_name, rank_level, color )
+        `)
+        .is('removed_at', null)
+        .order('joined_at', { ascending: false })
 
       if (error) throw error
-      setServers(data ?? [])
+
+      setEntries(
+        (data ?? [])
+          .filter(e => e.server)
+          .sort((a, b) => a.server.name.localeCompare(b.server.name))
+      )
     } catch (err) {
       setError('Failed to load servers.')
       console.error(err)
@@ -69,68 +105,68 @@ export default function Dashboard() {
     }
   }
 
-  useEffect(() => { loadServers() }, [])
+  useEffect(() => { load() }, [])
 
   return (
     <div className="dashboard-page">
       <div className="container">
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div className="dashboard-header">
           <div className="dashboard-header__left">
-            {user?.discordAvatar && (
-              <img
-                className="dashboard-header__avatar"
-                src={user.discordAvatar}
-                alt={user.discordUsername}
-              />
-            )}
+            {user?.discordAvatar
+              ? <img className="dashboard-header__avatar" src={user.discordAvatar} alt={user.discordUsername} />
+              : <div className="dashboard-header__avatar dashboard-header__avatar--fallback">
+                  {user?.discordUsername?.charAt(0).toUpperCase()}
+                </div>
+            }
             <div>
               <p className="dashboard-header__greeting">Welcome back,</p>
               <h2 className="dashboard-header__name">{user?.discordUsername ?? '…'}</h2>
             </div>
           </div>
-          <button className="btn-icon" onClick={loadServers} title="Refresh">
-            <RefreshCw size={16} />
-          </button>
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn-icon" onClick={() => navigate('/dashboard/settings')} title="Settings">
+              <Settings size={16} />
+            </button>
+            <button className="btn-icon" onClick={load} title="Refresh">
+              <RefreshCw size={16} />
+            </button>
+          </div>
         </div>
 
-        {/* Quick links */}
-        <div className="dashboard-quicklinks">
-          {[
-            { icon: Users,       label: 'Staff',    path: 'staff'    },
-            { icon: Clock,       label: 'Shifts',   path: 'shifts'   },
-            { icon: ShieldCheck, label: 'Bans',     path: 'bans'     },
-            { icon: Settings,    label: 'Settings', path: 'settings' },
-          ].map(({ icon: Icon, label, path }) => (
-            <div key={path} className="dashboard-quicklink">
-              <Icon size={18} />
-              <span>{label}</span>
-            </div>
-          ))}
+        {/* ── Stats row ── */}
+        <div className="dashboard-stats">
+          <div className="dashboard-stat">
+            <Shield size={16} />
+            <span>{entries.length} server{entries.length !== 1 ? 's' : ''}</span>
+          </div>
+          <div className="dashboard-stat">
+            <Star size={16} />
+            <span>
+              {entries.filter(e => e.role?.rank_level >= 5).length} senior role{entries.filter(e => e.role?.rank_level >= 5).length !== 1 ? 's' : ''}
+            </span>
+          </div>
         </div>
 
-        {/* Server list */}
+        {/* ── Server directory ── */}
         <div className="dashboard-section">
           <p className="section-label">Your Servers</p>
 
-          {loading && (
-            <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Loading…</p>
-          )}
+          {loading && <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Loading…</p>}
+          {error   && <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>}
 
-          {error && (
-            <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>
-          )}
+          {!loading && !error && entries.length === 0 && <NoServers />}
 
-          {!loading && !error && servers.length === 0 && <NoServers />}
-
-          {!loading && !error && servers.length > 0 && (
-            <div className="dashboard-server-list">
-              {servers.map(server => (
+          {!loading && !error && entries.length > 0 && (
+            <div className="server-card-grid">
+              {entries.map(({ server, role }) => (
                 <ServerCard
                   key={server.id}
                   server={server}
-                  onClick={() => navigate(`/dashboard/${server.guild_id}/staff`)}
+                  role={role}
+                  onClick={() => navigate(`/dashboard/${server.guild_id}/settings`)}
                 />
               ))}
             </div>
