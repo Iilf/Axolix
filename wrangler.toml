@@ -1,5 +1,0 @@
-[env.production.secrets]
-VITE_SUPABASE_URL = "https://wcavpryumlohjccxiohq.supabase.co" 
-VITE_SUPABASE_ANON = "sb_publishable_EoFH2MIrf4Xc1cJJaiAlHg_ct72t-ru" 
-VITE_ORACLE_BASE_URL = "" 
-VITE_DISCORD_CLIENT_ID = "1482863133386346536" 
