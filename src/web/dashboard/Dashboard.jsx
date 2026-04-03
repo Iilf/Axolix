@@ -2,85 +2,70 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutDashboard, Plus, Settings, ChevronRight, RefreshCw, Shield, Star } from 'lucide-react'
 import { useAuth, supabase } from '../../shared.jsx'
+import AddServerModal from './AddServerModal.jsx'
 
 // ── Server card ────────────────────────────────────────────────────────────
 function ServerCard({ server, role, onClick }) {
   return (
     <button className="server-card" onClick={onClick}>
-
-      {/* Banner */}
       <div className="server-card__banner">
         {server.banner_url
           ? <img src={server.banner_url} alt="" className="server-card__banner-img" />
           : <div className="server-card__banner-fallback" />
         }
       </div>
-
-      {/* Logo */}
       <div className="server-card__logo">
         {server.logo_url
           ? <img src={server.logo_url} alt={server.name} />
           : <span>{server.name.charAt(0).toUpperCase()}</span>
         }
       </div>
-
-      {/* Info */}
       <div className="server-card__body">
         <div className="server-card__top">
           <p className="server-card__name">{server.name}</p>
           <ChevronRight size={14} className="server-card__arrow" />
         </div>
-
-        {/* Role badge */}
         {role && (
           <div className="server-card__role" style={{ '--role-color': role.color ?? 'var(--primary)' }}>
             {role.rank_name}
           </div>
         )}
-
         {server.description && (
           <p className="server-card__desc">{server.description}</p>
         )}
       </div>
-
     </button>
   )
 }
 
 // ── No servers ─────────────────────────────────────────────────────────────
-function NoServers() {
+function NoServers({ onAdd }) {
   return (
     <div className="dashboard-empty">
       <LayoutDashboard size={32} strokeWidth={1.5} />
       <h3>No servers yet</h3>
-      <p>You are not a staff member on any server using Axolix.</p>
-      <a
-        className="btn btn-primary"
-        href="https://discord.com/oauth2/authorize"
-        target="_blank"
-        rel="noreferrer"
-      >
+      <p>Add a Discord server to start managing it with Axolix.</p>
+      <button className="btn btn-primary" onClick={onAdd}>
         <Plus size={15} />
-        Add Axolix to Discord
-      </a>
+        Add a Server
+      </button>
     </div>
   )
 }
 
 // ── Dashboard ──────────────────────────────────────────────────────────────
 export default function Dashboard() {
-  const { user }  = useAuth()
-  const navigate  = useNavigate()
-  const [entries, setEntries] = useState([])   // [{ server, role }]
-  const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState(null)
+  const { user }   = useAuth()
+  const navigate   = useNavigate()
+  const [entries,  setEntries]  = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [error,    setError]    = useState(null)
+  const [showAdd,  setShowAdd]  = useState(false)
 
   async function load() {
     setLoading(true)
     setError(null)
     try {
-      // Fetch servers the current user is an active staff member of,
-      // joined with their role on each server
       const { data, error } = await supabase
         .from('staff_members')
         .select(`
@@ -92,11 +77,24 @@ export default function Dashboard() {
 
       if (error) throw error
 
-      setEntries(
-        (data ?? [])
-          .filter(e => e.server)
-          .sort((a, b) => a.server.name.localeCompare(b.server.name))
-      )
+      // Also fetch servers the user owns but may not be a staff member of yet
+      const { data: owned } = await supabase
+        .from('servers')
+        .select('id, guild_id, name, logo_url, banner_url, description')
+        .order('name')
+
+      // Merge: owned servers not already in staff_members entries
+      const staffServerIds = new Set((data ?? []).map(e => e.server?.id).filter(Boolean))
+      const ownedExtra = (owned ?? [])
+        .filter(s => !staffServerIds.has(s.id))
+        .map(s => ({ server: s, role: null }))
+
+      const all = [
+        ...(data ?? []).filter(e => e.server),
+        ...ownedExtra,
+      ].sort((a, b) => a.server.name.localeCompare(b.server.name))
+
+      setEntries(all)
     } catch (err) {
       setError('Failed to load servers.')
       console.error(err)
@@ -111,7 +109,7 @@ export default function Dashboard() {
     <div className="dashboard-page">
       <div className="container">
 
-        {/* ── Header ── */}
+        {/* Header */}
         <div className="dashboard-header">
           <div className="dashboard-header__left">
             {user?.discordAvatar
@@ -125,8 +123,11 @@ export default function Dashboard() {
               <h2 className="dashboard-header__name">{user?.discordUsername ?? '…'}</h2>
             </div>
           </div>
-
           <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-ghost" style={{ fontSize: 13, padding: '7px 14px' }} onClick={() => setShowAdd(true)}>
+              <Plus size={14} />
+              Add Server
+            </button>
             <button className="btn-icon" onClick={() => navigate('/dashboard/settings')} title="Settings">
               <Settings size={16} />
             </button>
@@ -136,7 +137,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Stats row ── */}
+        {/* Stats */}
         <div className="dashboard-stats">
           <div className="dashboard-stat">
             <Shield size={16} />
@@ -150,14 +151,16 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Server directory ── */}
+        {/* Server grid */}
         <div className="dashboard-section">
           <p className="section-label">Your Servers</p>
 
           {loading && <p style={{ color: 'var(--text-2)', fontSize: 14 }}>Loading…</p>}
           {error   && <p style={{ color: 'var(--danger)', fontSize: 14 }}>{error}</p>}
 
-          {!loading && !error && entries.length === 0 && <NoServers />}
+          {!loading && !error && entries.length === 0 && (
+            <NoServers onAdd={() => setShowAdd(true)} />
+          )}
 
           {!loading && !error && entries.length > 0 && (
             <div className="server-card-grid">
@@ -174,6 +177,14 @@ export default function Dashboard() {
         </div>
 
       </div>
+
+      {/* Add server modal */}
+      {showAdd && (
+        <AddServerModal
+          onClose={() => setShowAdd(false)}
+          onAdded={() => { setShowAdd(false); load() }}
+        />
+      )}
     </div>
   )
 }
