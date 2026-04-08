@@ -1,0 +1,614 @@
+/* ═══════════════════════════════════════════════════════════════
+   AXOLIX — GLOBAL DESIGN SYSTEM
+   src/styles/index.css
+   Single source of truth for all design tokens.
+   No component-scoped CSS. No CSS Modules. No Tailwind.
+   All components consume only these variables — zero hardcoded hex.
+═══════════════════════════════════════════════════════════════ */
+
+
+/* ── Google Fonts ── */
+
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
+
+/* ══════════════════════════════════════════════════════════════
+   ROOT — global tokens that never change with theme
+══════════════════════════════════════════════════════════════ */
+
+:root {
+
+  /* ── Fonts ── */
+  --font-ui:      'Sora', sans-serif;
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-mono:    'JetBrains Mono', monospace;
+
+  /* ── Type scale ── */
+  --text-xs:      11px;  /* section labels, uppercase tags, table column headers */
+  --text-sm:      12px;  /* table cell content, sidebar items, badges, chips */
+  --text-base:    13px;  /* body text, form labels, descriptions */
+  --text-md:      15px;  /* card titles, modal headings, nav items */
+  --text-lg:      18px;  /* page headings, section titles */
+  --text-xl:      22px;  /* dashboard hero headings */
+  --text-2xl:     28px;  /* homepage headings */
+  --text-display: 40px;  /* homepage hero — Space Grotesk */
+  --text-stat:    24px;  /* stat card numbers — Space Grotesk */
+  --text-stat-lg: 32px;  /* large dashboard hero stat — Space Grotesk */
+
+  /* ── Line heights ── */
+  --leading-body:    1.6;
+  --leading-heading: 1.2;
+  --leading-ui:      1.0;  /* buttons, badges, stat values */
+
+  /* ── Letter spacing ── */
+  --tracking-display: -0.02em;  /* display + large stat text */
+  --tracking-label:    0.07em;  /* uppercase section labels */
+
+  /* ── Spacing scale ── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Border radius ── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Duration tokens ── */
+  --dur-instant: 80ms;   /* focus rings, active press states */
+  --dur-fast:    150ms;  /* hover states, tooltips, colour transitions */
+  --dur-base:    300ms;  /* buttons, badges, chips, small state changes */
+  --dur-enter:   350ms;  /* modals, toasts, panels, drawers entering */
+  --dur-exit:    200ms;  /* all dismissals — always faster than enter */
+  --dur-page:    420ms;  /* full route transitions */
+  --dur-stagger: 60ms;   /* delay increment between list/card items */
+  --dur-scroll:  500ms;  /* scroll-triggered entrance animations */
+
+  /* ── Easing curves ── */
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1); /* primary — modals, buttons, stat cards */
+  --ease-out:    cubic-bezier(0.4, 0, 0.2, 1);       /* default enters */
+  --ease-in:     cubic-bezier(0.4, 0, 1, 1);          /* exits only */
+  --ease-linear: linear;                               /* timers, progress bars, counters */
+
+  /* ── Z-index stack ── */
+  --z-base:    0;
+  --z-raised:  10;
+  --z-dropdown: 100;
+  --z-sticky:  200;
+  --z-overlay: 300;
+  --z-modal:   400;
+  --z-toast:   500;
+
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   THEMES — 8 dark + 7 light
+   Applied via data-theme on <html>.
+   Default is "dark" — set by inline head script before hydration.
+══════════════════════════════════════════════════════════════ */
+
+/* ── Dark themes ── */
+
+[data-theme="dark"] {
+  --bg-base:       #0e0f13;
+  --bg-surface:    #13141a;
+  --bg-elevated:   #1a1b24;
+  --bg-muted:      #1e1f2a;
+  --accent:        #7c5cfc;
+  --accent-dim:    rgba(124, 92, 252, 0.15);
+  --accent-hover:  #6d4df0;
+  --text-primary:  #f1f0f5;
+  --text-secondary:#9b97b2;
+  --text-tertiary: #5c5875;
+  --text-accent:   #a78bfa;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="midnight"] {
+  --bg-base:       #060608;
+  --bg-surface:    #111113;
+  --bg-elevated:   #17171a;
+  --bg-muted:      #1c1c20;
+  --accent:        #8b5cf6;
+  --accent-dim:    rgba(139, 92, 246, 0.15);
+  --accent-hover:  #7c4de8;
+  --text-primary:  #f0effe;
+  --text-secondary:#8b87a8;
+  --text-tertiary: #504d68;
+  --text-accent:   #a78bfa;
+  --border-base:   rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.12);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="dusk"] {
+  --bg-base:       #12101a;
+  --bg-surface:    #1a1625;
+  --bg-elevated:   #201b2e;
+  --bg-muted:      #261f38;
+  --accent:        #c084fc;
+  --accent-dim:    rgba(192, 132, 252, 0.15);
+  --accent-hover:  #b070f0;
+  --text-primary:  #f3effe;
+  --text-secondary:#a392c4;
+  --text-tertiary: #6b5890;
+  --text-accent:   #d8b4fe;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="abyss"] {
+  --bg-base:       #0a0e1a;
+  --bg-surface:    #0d1220;
+  --bg-elevated:   #111828;
+  --bg-muted:      #161f32;
+  --accent:        #3b82f6;
+  --accent-dim:    rgba(59, 130, 246, 0.15);
+  --accent-hover:  #2563eb;
+  --text-primary:  #e8f0fe;
+  --text-secondary:#7d9cc8;
+  --text-tertiary: #4a6080;
+  --text-accent:   #60a5fa;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="forest"] {
+  --bg-base:       #0d1210;
+  --bg-surface:    #101a13;
+  --bg-elevated:   #142018;
+  --bg-muted:      #19281d;
+  --accent:        #22c55e;
+  --accent-dim:    rgba(34, 197, 94, 0.15);
+  --accent-hover:  #16a34a;
+  --text-primary:  #e8f5ed;
+  --text-secondary:#7aad8a;
+  --text-tertiary: #476854;
+  --text-accent:   #4ade80;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="ember"] {
+  --bg-base:       #130a0a;
+  --bg-surface:    #1a0e0e;
+  --bg-elevated:   #221313;
+  --bg-muted:      #2a1818;
+  --accent:        #ef4444;
+  --accent-dim:    rgba(239, 68, 68, 0.15);
+  --accent-hover:  #dc2626;
+  --text-primary:  #fef2f2;
+  --text-secondary:#b07070;
+  --text-tertiary: #6b4040;
+  --text-accent:   #fca5a5;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="obsidian"] {
+  --bg-base:       #0f0f0f;
+  --bg-surface:    #181818;
+  --bg-elevated:   #1f1f1f;
+  --bg-muted:      #262626;
+  --accent:        #f59e0b;
+  --accent-dim:    rgba(245, 158, 11, 0.15);
+  --accent-hover:  #d97706;
+  --text-primary:  #fefce8;
+  --text-secondary:#a89060;
+  --text-tertiary: #6b5c38;
+  --text-accent:   #fcd34d;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+[data-theme="void"] {
+  --bg-base:       #0c0f14;
+  --bg-surface:    #0e1319;
+  --bg-elevated:   #121820;
+  --bg-muted:      #171e28;
+  --accent:        #06b6d4;
+  --accent-dim:    rgba(6, 182, 212, 0.15);
+  --accent-hover:  #0891b2;
+  --text-primary:  #ecfeff;
+  --text-secondary:#60a8b8;
+  --text-tertiary: #3a6878;
+  --text-accent:   #22d3ee;
+  --border-base:   rgba(255, 255, 255, 0.07);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --status-green:  #4ade80;
+  --status-amber:  #fbbf24;
+  --status-red:    #f87171;
+}
+
+/* ── Light themes ── */
+
+[data-theme="light"] {
+  --bg-base:       #f5f5f7;
+  --bg-surface:    #ffffff;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #eaeaf0;
+  --accent:        #6246ea;
+  --accent-dim:    rgba(98, 70, 234, 0.10);
+  --accent-hover:  #5035d6;
+  --text-primary:  #111827;
+  --text-secondary:#4b5563;
+  --text-tertiary: #9ca3af;
+  --text-accent:   #6246ea;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="arctic"] {
+  --bg-base:       #e8edf5;
+  --bg-surface:    #f4f7fc;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #dce4f0;
+  --accent:        #4f46e5;
+  --accent-dim:    rgba(79, 70, 229, 0.10);
+  --accent-hover:  #4338ca;
+  --text-primary:  #0f172a;
+  --text-secondary:#374151;
+  --text-tertiary: #9ca3af;
+  --text-accent:   #4f46e5;
+  --border-base:   rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.18);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="parchment"] {
+  --bg-base:       #faf7f2;
+  --bg-surface:    #fff9f2;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #eee8da;
+  --accent:        #d97706;
+  --accent-dim:    rgba(217, 119, 6, 0.10);
+  --accent-hover:  #b45309;
+  --text-primary:  #1c1008;
+  --text-secondary:#6b4f2a;
+  --text-tertiary: #b08050;
+  --text-accent:   #d97706;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="sage"] {
+  --bg-base:       #f0faf4;
+  --bg-surface:    #f8fdf9;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #d8f0e2;
+  --accent:        #16a34a;
+  --accent-dim:    rgba(22, 163, 74, 0.10);
+  --accent-hover:  #15803d;
+  --text-primary:  #052e16;
+  --text-secondary:#374151;
+  --text-tertiary: #9ca3af;
+  --text-accent:   #16a34a;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="blossom"] {
+  --bg-base:       #fdf2f8;
+  --bg-surface:    #fef7fb;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #f0d4e8;
+  --accent:        #db2777;
+  --accent-dim:    rgba(219, 39, 119, 0.10);
+  --accent-hover:  #be185d;
+  --text-primary:  #1f0a14;
+  --text-secondary:#6b2142;
+  --text-tertiary: #b07090;
+  --text-accent:   #db2777;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="frost"] {
+  --bg-base:       #f0f7ff;
+  --bg-surface:    #f8fbff;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #d4e8f8;
+  --accent:        #2563eb;
+  --accent-dim:    rgba(37, 99, 235, 0.10);
+  --accent-hover:  #1d4ed8;
+  --text-primary:  #0c1a3d;
+  --text-secondary:#2d4a7a;
+  --text-tertiary: #7090b8;
+  --text-accent:   #2563eb;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.15);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+[data-theme="pure"] {
+  --bg-base:       #fefefe;
+  --bg-surface:    #f9f9f9;
+  --bg-elevated:   #ffffff;
+  --bg-muted:      #ebebeb;
+  --accent:        #7c3aed;
+  --accent-dim:    rgba(124, 58, 237, 0.10);
+  --accent-hover:  #6d28d9;
+  --text-primary:  #111111;
+  --text-secondary:#4b5563;
+  --text-tertiary: #9ca3af;
+  --text-accent:   #7c3aed;
+  --border-base:   rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+  --status-green:  #16a34a;
+  --status-amber:  #d97706;
+  --status-red:    #dc2626;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   RESET & BASE
+══════════════════════════════════════════════════════════════ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  font-weight: 400;
+  line-height: var(--leading-body);
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+img, video, svg {
+  display: block;
+  max-width: 100%;
+}
+
+input, button, textarea, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+}
+
+a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+p {
+  line-height: var(--leading-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-ui);
+  font-weight: 600;
+  line-height: var(--leading-heading);
+  color: var(--text-primary);
+}
+
+::selection {
+  background-color: var(--accent-dim);
+  color: var(--text-primary);
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-dim), 0 0 0 1.5px var(--accent);
+  transition: box-shadow var(--dur-instant) var(--ease-out);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   TYPOGRAPHY UTILITIES
+   Applied directly via className — no Tailwind.
+══════════════════════════════════════════════════════════════ */
+
+.text-xs      { font-size: var(--text-xs); }
+.text-sm      { font-size: var(--text-sm); }
+.text-base    { font-size: var(--text-base); }
+.text-md      { font-size: var(--text-md); }
+.text-lg      { font-size: var(--text-lg); }
+.text-xl      { font-size: var(--text-xl); }
+.text-2xl     { font-size: var(--text-2xl); }
+.text-display { font-size: var(--text-display); font-family: var(--font-display); letter-spacing: var(--tracking-display); font-weight: 700; }
+.text-stat    { font-size: var(--text-stat);    font-family: var(--font-display); letter-spacing: var(--tracking-display); font-weight: 700; }
+.text-stat-lg { font-size: var(--text-stat-lg); font-family: var(--font-display); letter-spacing: var(--tracking-display); font-weight: 700; }
+.text-mono    { font-family: var(--font-mono); }
+
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-tertiary  { color: var(--text-tertiary); }
+.text-accent    { color: var(--text-accent); }
+.text-success   { color: var(--status-green); }
+.text-warning   { color: var(--status-amber); }
+.text-danger    { color: var(--status-red); }
+
+.label-uppercase {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   LAYOUT UTILITIES
+══════════════════════════════════════════════════════════════ */
+
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+.container-sm {
+  width: 100%;
+  max-width: 768px;
+  margin-inline: auto;
+  padding-inline: var(--space-6);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   SCROLLBAR
+══════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ANIMATIONS
+   keyframes live here — components reference them by name.
+══════════════════════════════════════════════════════════════ */
+
+@keyframes axolix-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes axolix-slide-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes axolix-scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes axolix-toast-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes axolix-toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes axolix-pulse-ring {
+  0%   { transform: scale(1);    opacity: 0.6; }
+  100% { transform: scale(1.6);  opacity: 0; }
+}
+
+@keyframes axolix-status-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
+}
+
+@keyframes axolix-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   ACCESSIBILITY — prefers-reduced-motion
+   Collapses ALL transitions and animations to 0ms.
+   No JS branching — this single block is sufficient.
+══════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration:  0ms !important;
+    animation-delay:     0ms !important;
+    transition-duration: 0ms !important;
+    transition-delay:    0ms !important;
+  }
+}
