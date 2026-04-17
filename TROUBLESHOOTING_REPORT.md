@@ -1047,6 +1047,59 @@ setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: strin
 
 ---
 
+### Issue 5.3: Missing Type Annotation in Supabase Server Client
+
+**Severity:** High  
+**Error:** `Parameter 'cookiesToSet' implicitly has an 'any' type`  
+**File:** `src/lib/supabase/server.ts`  
+**Line:** 39
+
+#### Problem
+Identical issue to 5.2, but in the server-side Supabase client initialization. The `setAll()` callback in the cookie handler was missing an explicit type annotation.
+
+**Before:**
+```typescript
+setAll(cookiesToSet) {  // ❌ Implicitly has 'any' type
+  try {
+    cookiesToSet.forEach(({ name, value, options }) => {
+      cookieStore.set(name, value, options)
+    })
+  } catch {
+    // setAll called from a Server Component...
+  }
+}
+```
+
+#### Fix Applied
+
+**After:**
+```typescript
+setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: string]: unknown } }>) {
+  try {
+    cookiesToSet.forEach(({ name, value, options }) => {
+      cookieStore.set(name, value, options)
+    })
+  } catch {
+    // setAll called from a Server Component...
+  }
+}
+```
+
+#### Why This Works
+- Same type annotation as Issue 5.2
+- Consistent across both Supabase client initializations (middleware and server)
+- Explicitly types the cookie objects array
+- Complies with strict TypeScript settings
+
+#### Pattern
+This issue appeared in two places with identical Supabase SSR client setup:
+1. **Middleware** (`src/lib/supabase/middleware.ts` line 34) - for edge middleware
+2. **Server** (`src/lib/supabase/server.ts` line 39) - for server components/actions
+
+Both use the same Supabase SSR library and require identical type annotations.
+
+---
+
 ## PART 6: FILES MODIFIED SUMMARY
 
 ### Files Changed (Updated)
@@ -1090,7 +1143,10 @@ setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: strin
 11. **src/lib/supabase/middleware.ts** (1 change)
     - Added explicit type annotation to `cookiesToSet` parameter in Supabase cookie handler
 
-12. **README.md** (NEW FILE)
+12. **src/lib/supabase/server.ts** (1 change)
+    - Added explicit type annotation to `cookiesToSet` parameter in Supabase server client cookie handler
+
+13. **README.md** (NEW FILE)
     - Comprehensive project documentation
     - Setup and deployment instructions
     - Tech stack and structure overview
@@ -1125,10 +1181,10 @@ setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: strin
 3. Code Quality & Logic (3 issues)
 4. Type Inference & Narrowing (4 issues)
 5. Compilation Target Compatibility (1 issue)
-6. Implicit Type Annotations (1 issue)
+6. Implicit Type Annotations (2 issues)
 7. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 16 major issues + multiple sub-issues
+**Total Issues Fixed:** 17 major issues + multiple sub-issues
 
 ---
 
