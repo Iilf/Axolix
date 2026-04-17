@@ -13,6 +13,7 @@
  */
 
 import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@supabase/supabase-js"
 import { cookies } from "next/headers"
 import type { Database } from "@/types/database"
 import { COOKIE_SESSION } from "@/lib/utils/constants"
@@ -63,9 +64,6 @@ export async function getSupabaseServerClient() {
  * Never call this from client-side code or expose the service key to the browser.
  */
 export function getSupabaseAdminClient() {
-  // Import createClient directly — the admin client doesn't need cookie handling
-  const { createClient } = require("@supabase/supabase-js")
-
   return createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,

@@ -1100,7 +1100,69 @@ Both use the same Supabase SSR library and require identical type annotations.
 
 ---
 
-## PART 6: FILES MODIFIED SUMMARY
+### Issue 5.4: Untyped Function Call with Generic Type Arguments
+
+**Severity:** High  
+**Error:** `Untyped function calls may not accept type arguments`  
+**File:** `src/lib/supabase/server.ts`  
+**Line:** 69
+
+#### Problem
+The admin client initialization used `require()` to import `createClient`, which is untyped. TypeScript doesn't allow generic type arguments on untyped functions.
+
+**Before:**
+```typescript
+export function getSupabaseAdminClient() {
+  const { createClient } = require("@supabase/supabase-js")  // ❌ Untyped
+
+  return createClient<Database>(  // ❌ Can't use generics on untyped functions
+    // ...
+  )
+}
+```
+
+#### Root Cause
+- `require()` imports are untyped in TypeScript strict mode
+- TypeScript can't determine the function signature of `createClient`
+- Cannot apply generic type parameters to unknown function signatures
+- Need to use proper ES6 `import` statement for type information
+
+#### Fix Applied
+
+**File:** `src/lib/supabase/server.ts`
+
+**Step 1: Add proper import at the top**
+```typescript
+import { createClient } from "@supabase/supabase-js"
+```
+
+**Step 2: Remove require() and use the imported function**
+```typescript
+export function getSupabaseAdminClient() {
+  return createClient<Database>(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: {
+        autoRefreshToken:    false,
+        persistSession:      false,
+        detectSessionInUrl:  false,
+      },
+    },
+  )
+}
+```
+
+#### Why This Works
+- ES6 `import` statements preserve full type information
+- TypeScript knows `createClient` is a generic function that accepts type parameters
+- Can now apply `<Database>` type argument to properly type the return value
+- Cleaner, more idiomatic code
+- No runtime behavior change
+
+---
+
+## PART 7: FILES MODIFIED SUMMARY
 
 ### Files Changed (Updated)
 
@@ -1143,8 +1205,9 @@ Both use the same Supabase SSR library and require identical type annotations.
 11. **src/lib/supabase/middleware.ts** (1 change)
     - Added explicit type annotation to `cookiesToSet` parameter in Supabase cookie handler
 
-12. **src/lib/supabase/server.ts** (1 change)
+12. **src/lib/supabase/server.ts** (2 changes)
     - Added explicit type annotation to `cookiesToSet` parameter in Supabase server client cookie handler
+    - Changed `require()` to ES6 `import` for `createClient` to enable generic type arguments
 
 13. **README.md** (NEW FILE)
     - Comprehensive project documentation
@@ -1158,7 +1221,7 @@ Both use the same Supabase SSR library and require identical type annotations.
 
 ---
 
-## PART 7: RESULTS & METRICS
+## PART 8: RESULTS & METRICS
 
 ### Error Reduction
 | Metric | Before | After |
@@ -1182,13 +1245,14 @@ Both use the same Supabase SSR library and require identical type annotations.
 4. Type Inference & Narrowing (4 issues)
 5. Compilation Target Compatibility (1 issue)
 6. Implicit Type Annotations (2 issues)
-7. Configuration & Documentation (2 issues)
+7. Type System Strictness (1 issue)
+8. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 17 major issues + multiple sub-issues
+**Total Issues Fixed:** 18 major issues + multiple sub-issues
 
 ---
 
-## PART 8: BEST PRACTICES & RECOMMENDATIONS
+## PART 9: BEST PRACTICES & RECOMMENDATIONS
 
 ### Immediate Actions (Already Completed)
 ✅ Run `npm install` to install dependencies  
