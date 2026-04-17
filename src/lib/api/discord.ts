@@ -104,7 +104,7 @@ export function buildAvatarUrl(
   size: 32 | 64 | 128 | 256 | 512 = 128,
 ): string {
   if (!avatarHash) {
-    const index = (BigInt(userId) >> 22n) % 6n
+    const index = (BigInt(userId) >> BigInt(22)) % BigInt(6)
     return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
   }
   const ext = avatarHash.startsWith("a_") ? "gif" : "png"

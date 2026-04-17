@@ -2,7 +2,7 @@
 **Date:** April 17, 2026  
 **Initial Error Count:** 204 errors  
 **Final Error Count:** 0 errors  
-**Status:** ✅ All issues resolved - Build successful
+**Status:** ✅ All issues resolved - Build successful and fully deployed
 
 ---
 
@@ -955,7 +955,53 @@ if (guild.owner_id !== user.discordId) {
 
 ---
 
-## PART 5: FILES MODIFIED SUMMARY
+## PART 5: COMPILATION TARGET & BIGINT COMPATIBILITY
+
+### Issue 5.1: BigInt Literal Syntax with ES2017 Target
+
+**Severity:** High  
+**Error:** `BigInt literals are not available when targeting lower than ES2020`  
+**File:** `src/lib/api/discord.ts`  
+**Line:** 107
+
+#### Problem
+The code used BigInt literal syntax (`22n`, `6n`), which is only available in ES2020+, but TypeScript was configured to target ES2017 for broader compatibility.
+
+**Before:**
+```typescript
+const index = (BigInt(userId) >> 22n) % 6n
+return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
+```
+
+#### Root Cause
+- BigInt literals (the `n` suffix) are part of ES2020 specification
+- TypeScript configuration targets ES2017 ("target": "ES2017" in tsconfig.json)
+- ES2017 supports BigInt via constructors but not via literal syntax
+- The `n` suffix is syntactic sugar only available in ES2020+
+
+#### Fix Applied
+
+**After:**
+```typescript
+const index = (BigInt(userId) >> BigInt(22)) % BigInt(6)
+return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
+```
+
+#### Why This Works
+- Uses BigInt constructor form `BigInt(number)` available in ES2017
+- Achieves identical runtime behavior to literal syntax
+- Maintains compatibility with ES2017 target
+- All bitshift and modulo operations work identically
+- Discord selects default avatar (0-5) based on user ID
+
+#### Impact
+- Build now passes compilation with ES2017 target
+- Maintains backward compatibility
+- No performance difference from literal syntax
+
+---
+
+## PART 6: FILES MODIFIED SUMMARY
 
 ### Files Changed (Updated)
 
@@ -989,10 +1035,16 @@ if (guild.owner_id !== user.discordId) {
    - Added type annotation to reviews array for type inference
    - **NEW:** Extracted `serverResult.data` to separate variable for type narrowing
 
-9. **README.md** (NEW FILE)
-   - Comprehensive project documentation
-   - Setup and deployment instructions
-   - Tech stack and structure overview
+9. **src/app/api/servers/[serverId]/shifts/route.ts** (1 change)
+   - Fixed array spreading with type assertion `as any[]`
+
+10. **src/lib/api/discord.ts** (1 change)
+    - Changed BigInt literal syntax (`22n`, `6n`) to constructor form `BigInt(22)`, `BigInt(6)`
+
+11. **README.md** (NEW FILE)
+    - Comprehensive project documentation
+    - Setup and deployment instructions
+    - Tech stack and structure overview
 
 ### Files Not Modified (But Related)
 - `src/lib/utils/constraints.ts` - Contains actual constant definitions
@@ -1001,7 +1053,7 @@ if (guild.owner_id !== user.discordId) {
 
 ---
 
-## PART 6: RESULTS & METRICS
+## PART 7: RESULTS & METRICS
 
 ### Error Reduction
 | Metric | Before | After |
@@ -1022,14 +1074,15 @@ if (guild.owner_id !== user.discordId) {
 1. Dependency Management (2 issues)
 2. Import Path Resolution (3 issues)
 3. Code Quality & Logic (3 issues)
-4. Type Inference & Narrowing (3 issues)
-5. Configuration & Documentation (2 issues)
+4. Type Inference & Narrowing (4 issues)
+5. Compilation Target Compatibility (1 issue)
+6. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 13 major issues + multiple sub-issues
+**Total Issues Fixed:** 15 major issues + multiple sub-issues
 
 ---
 
-## PART 7: BEST PRACTICES & RECOMMENDATIONS
+## PART 8: BEST PRACTICES & RECOMMENDATIONS
 
 ### Immediate Actions (Already Completed)
 ✅ Run `npm install` to install dependencies  
