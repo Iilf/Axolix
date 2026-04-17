@@ -708,12 +708,20 @@ Type error: Property 'rating' does not exist on type 'never'.
 
 **Before:**
 ```typescript
-const reviews = reviewsResult.data ?? []
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+const serverData = serverResult.data
 ```
 
 **After:**
 ```typescript
-const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+const serverData = serverResult.data!
 ```
 
 **Full Context:**
@@ -736,8 +744,7 @@ if (serverResult.error || !serverResult.data) {
   return notFound("Server")
 }
 
-const serverData = serverResult.data
-
+const serverData = serverResult.data!
 const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
 const total   = reviews.length
 const average = total > 0
@@ -745,48 +752,26 @@ const average = total > 0
   : 0
 ```
 
-#### Why This Fix Works
-- Explicitly tells TypeScript the data structure
-- Specifies: array of objects with `number` property called `rating`
-- Reducer callback `r` is properly typed as `{ rating: number }`
-- Accessing `r.rating` is now valid
-- Type inference cascades properly through the reduce operation
+#### Why This Works
+- The non-null assertion operator `!` tells TypeScript to trust that the value exists
+- After the conditional check, we know `serverResult.data` is not null/undefined
+- This is a safe assertion since we checked for both error and null data above
 
-#### Alternative Solutions
+#### API Routes Audit
+**Checked all API route files for similar type issues:**
+- ✅ `src/app/api/servers/route.ts` - No issues
+- ✅ `src/app/api/servers/[serverId]/route.ts` - Fixed above
+- ✅ `src/app/api/servers/[serverId]/members/route.ts` - No issues
+- ✅ `src/app/api/servers/[serverId]/bans/route.ts` - No issues
+- ✅ `src/app/api/servers/[serverId]/bans/[banId]/route.ts` - No issues
+- ✅ `src/app/api/servers/[serverId]/shifts/route.ts` - No issues
+- ✅ `src/app/api/servers/[serverId]/shifts/[shiftId]/route.ts` - No issues
+- ✅ `src/app/api/auth/roblox/callback/route.ts` - No issues
+- ✅ `src/app/api/auth/roblox/redirect/route.ts` - No issues
+- ✅ `src/app/api/analytics/ingest/route.ts` - No issues
+- ✅ `src/app/api/roblox/user/[robloxId]/route.ts` - No issues
 
-**Option 1: Create Interface (Better for reuse)**
-```typescript
-interface ServerReview {
-  rating: number
-}
-
-const reviews = reviewsResult.data ?? [] as ServerReview[]
-```
-
-**Option 2: Generic Supabase Response Type**
-```typescript
-interface ReviewRow {
-  rating: number
-}
-
-const reviews = (reviewsResult.data ?? []) as ReviewRow[]
-```
-
-#### Best Practices for Database Queries
-- Always provide type annotations for query results
-- Create interfaces for common query shapes
-- Document expected data structure in comments
-- Consider creating a types file for database-related types
-- Use Supabase's type generation tools if available
-
-#### Prevention Strategies
-- Enable strict TypeScript settings in `tsconfig.json`:
-  - `"strict": true` (already enabled)
-  - `"noImplicitAny": true`
-  - `"strictNullChecks": true`
-- Create type definitions for all database shapes
-- Use code generation from Supabase schema when possible
-- Add pre-commit TypeScript checks: `tsc --noEmit`
+**Result:** Only one type narrowing issue found and fixed. All other API routes use proper type handling or don't have complex Supabase query results that require narrowing.
 
 ---
 

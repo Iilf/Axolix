@@ -34,8 +34,8 @@ export async function GET(
       return notFound("Server")
     }
 
-    // TypeScript now knows serverResult.data exists
-    const serverData = serverResult.data
+    // Type assertion to help TypeScript understand the type
+    const serverData = serverResult.data!
 
     const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
     const total   = reviews.length
