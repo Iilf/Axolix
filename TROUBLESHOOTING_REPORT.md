@@ -1001,6 +1001,52 @@ return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
 
 ---
 
+### Issue 5.2: Missing Type Annotation in Supabase Middleware
+
+**Severity:** High  
+**Error:** `Parameter 'cookiesToSet' implicitly has an 'any' type`  
+**File:** `src/lib/supabase/middleware.ts`  
+**Line:** 34
+
+#### Problem
+The `setAll()` callback in the Supabase cookie handler was missing an explicit type annotation for the `cookiesToSet` parameter.
+
+**Before:**
+```typescript
+setAll(cookiesToSet) {  // ❌ Implicitly has 'any' type
+  cookiesToSet.forEach(({ name, value, options }) => {
+    request.cookies.set(name, value)
+    response.cookies.set(name, value, options)
+  })
+}
+```
+
+#### Root Cause
+- TypeScript strict mode requires explicit types for function parameters
+- The `noImplicitAny` setting in tsconfig.json prevents implicit types
+- Even though TypeScript could infer the type from context, strict mode requires explicit annotation
+
+#### Fix Applied
+
+**After:**
+```typescript
+setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: string]: unknown } }>) {
+  cookiesToSet.forEach(({ name, value, options }) => {
+    request.cookies.set(name, value)
+    response.cookies.set(name, value, options)
+  })
+}
+```
+
+#### Why This Works
+- Explicitly types `cookiesToSet` as an array of cookie objects
+- Each cookie has `name`, `value`, and `options` properties
+- The `options` object uses generic key-value typing (`{ [key: string]: unknown }`) for flexibility
+- TypeScript can now properly type-check the destructuring and forEach callback
+- Complies with strict TypeScript settings
+
+---
+
 ## PART 6: FILES MODIFIED SUMMARY
 
 ### Files Changed (Updated)
@@ -1041,7 +1087,10 @@ return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
 10. **src/lib/api/discord.ts** (1 change)
     - Changed BigInt literal syntax (`22n`, `6n`) to constructor form `BigInt(22)`, `BigInt(6)`
 
-11. **README.md** (NEW FILE)
+11. **src/lib/supabase/middleware.ts** (1 change)
+    - Added explicit type annotation to `cookiesToSet` parameter in Supabase cookie handler
+
+12. **README.md** (NEW FILE)
     - Comprehensive project documentation
     - Setup and deployment instructions
     - Tech stack and structure overview
@@ -1076,9 +1125,10 @@ return `${DISCORD_CDN_BASE}/embed/avatars/${index}.png`
 3. Code Quality & Logic (3 issues)
 4. Type Inference & Narrowing (4 issues)
 5. Compilation Target Compatibility (1 issue)
-6. Configuration & Documentation (2 issues)
+6. Implicit Type Annotations (1 issue)
+7. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 15 major issues + multiple sub-issues
+**Total Issues Fixed:** 16 major issues + multiple sub-issues
 
 ---
 

@@ -31,7 +31,7 @@ export async function refreshSupabaseSession(
         getAll() {
           return request.cookies.getAll()
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: Array<{ name: string; value: string; options: { [key: string]: unknown } }>) {
           // Write updated cookies to both the request and response so that
           // the refreshed session is available within this request cycle.
           cookiesToSet.forEach(({ name, value, options }) => {
