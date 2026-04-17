@@ -9,8 +9,8 @@
  */
 
 import { useTheme }                from "@/hooks/useTheme"
-import { DARK_THEMES, LIGHT_THEMES } from "@/lib/utils/constraints"
-import type { ThemeName }           from "@/lib/utils/constraints"
+import { DARK_THEMES, LIGHT_THEMES } from "@/lib/utils/constants"
+import type { ThemeName }           from "@/lib/utils/constants"
 
 // Visual swatch colours — hardcoded because they represent specific theme identities,
 // not the current theme's variables
