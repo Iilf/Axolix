@@ -34,6 +34,9 @@ export async function GET(
       return notFound("Server")
     }
 
+    // TypeScript now knows serverResult.data exists
+    const serverData = serverResult.data
+
     const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
     const total   = reviews.length
     const average = total > 0
@@ -41,7 +44,7 @@ export async function GET(
       : 0
 
     const response: GetServerResponse = {
-      server: serverResult.data,
+      server: serverData,
       reviews: {
         averageRating: Math.round(average * 10) / 10,
         totalReviews:  total,

@@ -660,6 +660,118 @@ interface ReviewRow {
 const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 ```
 
+### Issue 4.1: Supabase Query Result Type Inference Failure
+
+**Severity:** High  
+**Error:** `Property 'rating' does not exist on type 'never'`  
+**File:** `src/app/api/servers/[serverId]/route.ts`  
+**Line:** 40
+
+#### Problem
+TypeScript couldn't infer the type of objects returned from Supabase query:
+
+**Before:**
+```typescript
+const reviews = reviewsResult.data ?? []
+const total   = reviews.length
+const average = total > 0
+  ? reviews.reduce((sum, r) => sum + r.rating, 0) / total  // ❌ r.rating fails
+  : 0
+```
+
+#### Error Message
+```
+Type error: Property 'rating' does not exist on type 'never'.
+```
+
+#### Root Cause
+- Supabase query result `reviewsResult.data ?? []` wasn't explicitly typed
+- TypeScript inferred the empty array `[]` as `never[]` type
+- Couldn't determine that array contains objects with `rating` property
+- Reducer callback parameter `r` typed as `never`
+- Accessing `r.rating` on `never` type is invalid
+
+#### Why This Happened
+- Missing type annotation for query result
+- Empty fallback array `[]` provides no type information
+- TypeScript inference couldn't determine object shape
+- No explicit interface/type for review objects
+
+#### Impact
+- Build fails during type checking phase
+- Prevents production deployment
+- `npm run build` command fails
+
+#### Fix Applied
+
+**File:** `src/app/api/servers/[serverId]/route.ts`
+
+**Before:**
+```typescript
+const reviews = reviewsResult.data ?? []
+```
+
+**After:**
+```typescript
+const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
+```
+
+**Full Context:**
+```typescript
+const supabase = await getSupabaseServerClient()
+
+const [serverResult, reviewsResult] = await Promise.all([
+  supabase
+    .from("servers")
+    .select("*")
+    .eq("id", serverId)
+    .single(),
+  supabase
+    .from("server_reviews")
+    .select("rating")
+    .eq("server_id", serverId),
+])
+
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+const serverData = serverResult.data
+
+const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
+const total   = reviews.length
+const average = total > 0
+  ? reviews.reduce((sum, r) => sum + r.rating, 0) / total  // ✅ Now works
+  : 0
+```
+
+#### Why This Fix Works
+- Explicitly tells TypeScript the data structure
+- Specifies: array of objects with `number` property called `rating`
+- Reducer callback `r` is properly typed as `{ rating: number }`
+- Accessing `r.rating` is now valid
+- Type inference cascades properly through the reduce operation
+
+#### Alternative Solutions
+
+**Option 1: Create Interface (Better for reuse)**
+```typescript
+interface ServerReview {
+  rating: number
+}
+
+const reviews = reviewsResult.data ?? [] as ServerReview[]
+```
+
+**Option 2: Generic Supabase Response Type**
+```typescript
+interface ReviewRow {
+  rating: number
+}
+
+const reviews = (reviewsResult.data ?? []) as ReviewRow[]
+```
+
 #### Best Practices for Database Queries
 - Always provide type annotations for query results
 - Create interfaces for common query shapes
@@ -680,11 +792,12 @@ const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 
 ## PART 5: FILES MODIFIED SUMMARY
 
-### Files Changed
+### Files Changed (Updated)
 
 1. **package.json** (2 changes)
    - Updated `next` from 15.3.0 → 15.5.15
    - Updated `eslint-config-next` from 15.3.0 → 15.5.15
+   - **NEW:** Pinned `@opennextjs/cloudflare` to `^1.19.1`
 
 2. **src/components/CommandPalette.tsx** (2 changes)
    - Fixed import path: `Modal` → `modal` (lowercase)
@@ -700,15 +813,21 @@ const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 5. **src/components/ThemePicker.tsx** (1 change)
    - Fixed import path: `constraints` → `constants`
 
-6. **tsconfig.json** (1 change)
-   - Added `src/components/modals/Modal.tsx` to exclude list
+6. **tsconfig.json** (2 changes)
+   - Added `src/components/modals/Modal.tsx` to exclude list (twice)
 
 7. **src/lib/utils/constants.ts** (NEW FILE)
    - Created re-export file for constraints constants
    - Allows 20+ files to import from expected path
 
-8. **src/app/api/servers/[serverId]/route.ts** (1 change)
+8. **src/app/api/servers/[serverId]/route.ts** (2 changes)
    - Added type annotation to reviews array for type inference
+   - **NEW:** Extracted `serverResult.data` to separate variable for type narrowing
+
+9. **README.md** (NEW FILE)
+   - Comprehensive project documentation
+   - Setup and deployment instructions
+   - Tech stack and structure overview
 
 ### Files Not Modified (But Related)
 - `src/lib/utils/constraints.ts` - Contains actual constant definitions
@@ -728,18 +847,20 @@ const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 | TypeScript Type Errors | 20+ | 0 |
 | Build Status | ❌ Failed | ✅ Passed |
 
-### Affected Components
-- **Direct Issues:** 8 files
+### Affected Components (Updated)
+- **Direct Issues:** 9 files
 - **Indirect Benefits:** 20+ additional files
-- **Total Components Fixed:** 28+ files
+- **Total Components Fixed:** 29+ files
+- **Documentation:** 1 new file
 
 ### Issue Categories Fixed
 1. Dependency Management (2 issues)
 2. Import Path Resolution (3 issues)
 3. Code Quality & Logic (3 issues)
-4. Type Inference (1 issue)
+4. Type Inference & Narrowing (3 issues)
+5. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 9 major issues + multiple sub-issues
+**Total Issues Fixed:** 13 major issues + multiple sub-issues
 
 ---
 
@@ -828,19 +949,23 @@ const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 
 ## PART 8: TESTING & VERIFICATION
 
-### Build Verification
+### Build Verification (Updated)
 ✅ Dependencies installed: `npm install` succeeded  
 ✅ Package resolution: No ERESOLVE conflicts  
 ✅ Type checking: `tsc --noEmit` passes  
 ✅ Compilation: `next build` succeeds  
 ✅ No remaining TypeScript errors  
+✅ Documentation: `README.md` created  
+✅ Package versions: Properly pinned  
 
-### Deployment Ready
+### Deployment Ready (Updated)
 ✅ Local development: Errors resolved  
 ✅ Type safety: All type annotations correct  
 ✅ Accessibility: Keyboard hints labeled  
 ✅ Code quality: Logic clarified  
 ✅ Build system: Ready for production  
+✅ Documentation: Complete  
+✅ Dependencies: Deterministic versions  
 
 ---
 
@@ -886,11 +1011,287 @@ const reviews = (reviewsResult.data ?? []) as ReviewRow[]
 ```
 next:               15.3.0 → 15.5.15
 eslint-config-next: 15.3.0 → 15.5.15
+@opennextjs/cloudflare: latest → ^1.19.1
 ```
 
 ### New Files Created
 ```
 src/lib/utils/constants.ts (re-export wrapper)
+README.md (project documentation)
+```
+
+### Configuration Changes
+```
+tsconfig.json: Added src/components/modals/Modal.tsx to exclude list
+```
+
+### Issue 4.2: TypeScript Type Narrowing Problem
+
+**Severity:** High  
+**Error:** `Property 'data' does not exist on type 'never'`  
+**File:** `src/app/api/servers/[serverId]/route.ts`  
+**Line:** 44
+
+#### Problem
+Even after the error check, TypeScript still inferred `serverResult.data` as `never`:
+
+**Before:**
+```typescript
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+const response: GetServerResponse = {
+  server: serverResult.data,  // ❌ TypeScript still thinks this is never
+  reviews: {
+    averageRating: Math.round(average * 10) / 10,
+    totalReviews:  total,
+  },
+}
+```
+
+#### Root Cause
+- TypeScript's control flow analysis couldn't narrow the union type properly
+- The conditional check didn't convince TypeScript that `serverResult.data` exists
+- Complex union types from Supabase client made type narrowing difficult
+
+#### Impact
+- Build fails with type error
+- Prevents deployment
+- Required additional type assertion or variable extraction
+
+#### Fix Applied
+
+**After:**
+```typescript
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+// TypeScript now knows serverResult.data exists
+const serverData = serverResult.data
+
+const response: GetServerResponse = {
+  server: serverData,  // ✅ TypeScript accepts this
+  reviews: {
+    averageRating: Math.round(average * 10) / 10,
+    totalReviews:  total,
+  },
+}
+```
+
+#### Why This Works
+- Extracting to a separate variable forces TypeScript to re-evaluate the type
+- The assignment `const serverData = serverResult.data` narrows the type correctly
+- TypeScript can now infer that `serverData` is the correct type
+
+---
+
+### Issue 4.3: Persistent Casing Conflict
+
+**Severity:** Medium  
+**Error:** `Already included file name differs from file name only in casing`
+
+#### Problem
+The empty `Modal.tsx` file still caused casing conflicts even after being emptied.
+
+#### Root Cause
+- TypeScript includes all `.tsx` files by default via `**/*.tsx` pattern
+- Empty files are still considered "included" by TypeScript
+- Case-sensitive filesystem conflict persisted
+
+#### Fix Applied
+Re-added the exclude pattern to `tsconfig.json`:
+
+**tsconfig.json:**
+```json
+{
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules", "src/components/modals/Modal.tsx"]
+}
+```
+
+---
+
+### Issue 4.4: Deprecated Package Version Pinning
+
+**Severity:** Low-Medium (maintenance risk)  
+**File:** `package.json`
+
+#### Problem
+`@opennextjs/cloudflare` was still using `"latest"` version despite earlier identification as problematic.
+
+#### Impact
+- Non-deterministic builds
+- Potential breaking changes on package updates
+- Hard to reproduce issues across environments
+
+#### Fix Applied
+
+**Before:**
+```json
+"@opennextjs/cloudflare": "latest"
+```
+
+**After:**
+```json
+"@opennextjs/cloudflare": "^1.19.1"
+```
+
+#### Why This Version
+- Matches the version that was compatible with Next.js 15.5.15
+- Uses caret range (`^`) for patch updates but not breaking changes
+- Provides deterministic builds while allowing security updates
+
+---
+
+### Issue 4.5: Missing Project Documentation
+
+**Severity:** Low (developer experience)  
+**Problem:** No `README.md` file existed
+
+#### Impact
+- New developers don't know how to set up the project
+- No documentation of available scripts
+- Missing environment variable setup instructions
+- Poor onboarding experience
+
+#### Fix Applied
+Created comprehensive `README.md` with:
+- Setup instructions
+- Build and deployment commands
+- Tech stack overview
+- Project structure explanation
+- Environment variables documentation
+- Contributing guidelines
+- Reference to troubleshooting report
+
+---
+
+## PART 5: UPDATED FILES MODIFIED SUMMARY
+
+### Files Changed (Updated)
+
+1. **package.json** (2 changes)
+   - Updated `next` from 15.3.0 → 15.5.15
+   - Updated `eslint-config-next` from 15.3.0 → 15.5.15
+   - **NEW:** Pinned `@opennextjs/cloudflare` to `^1.19.1`
+
+2. **src/components/CommandPalette.tsx** (2 changes)
+   - Fixed import path: `Modal` → `modal` (lowercase)
+   - Updated keyboard hints text and added accessibility titles
+
+3. **src/components/modals/ConfirmModal.tsx** (2 changes)
+   - Fixed import path: `Modal` → `modal` (lowercase)
+   - Removed redundant title prop, fixed button close logic
+
+4. **src/components/modals/ServerSelectModal.tsx** (1 change)
+   - Fixed import path: `Modal` → `modal` (lowercase)
+
+5. **src/components/ThemePicker.tsx** (1 change)
+   - Fixed import path: `constraints` → `constants`
+
+6. **tsconfig.json** (2 changes)
+   - Added `src/components/modals/Modal.tsx` to exclude list (twice)
+
+7. **src/lib/utils/constants.ts** (NEW FILE)
+   - Created re-export file for constraints constants
+   - Allows 20+ files to import from expected path
+
+8. **src/app/api/servers/[serverId]/route.ts** (2 changes)
+   - Added type annotation to reviews array for type inference
+   - **NEW:** Extracted `serverResult.data` to separate variable for type narrowing
+
+9. **README.md** (NEW FILE)
+   - Comprehensive project documentation
+   - Setup and deployment instructions
+   - Tech stack and structure overview
+
+### Files Not Modified (But Related)
+- `src/lib/utils/constraints.ts` - Contains actual constant definitions
+- `src/components/modals/modal.tsx` - Source file for Modal components
+- All other imports automatically resolved after these fixes
+
+---
+
+## PART 6: UPDATED RESULTS & METRICS
+
+### Error Reduction (Updated)
+| Metric | Before | After |
+|--------|--------|-------|
+| Total Errors | 204 | 0 |
+| Module Resolution Errors | 180+ | 0 |
+| Import Path Errors | 4 | 0 |
+| TypeScript Type Errors | 20+ | 0 |
+| Build Status | ❌ Failed | ✅ Passed |
+
+### Affected Components (Updated)
+- **Direct Issues:** 9 files
+- **Indirect Benefits:** 20+ additional files
+- **Total Components Fixed:** 29+ files
+- **Documentation:** 1 new file
+
+### Issue Categories Fixed (Updated)
+1. Dependency Management (2 issues)
+2. Import Path Resolution (3 issues)
+3. Code Quality & Logic (3 issues)
+4. Type Inference & Narrowing (3 issues)
+5. Configuration & Documentation (2 issues)
+
+**Total Issues Fixed:** 13 major issues + multiple sub-issues
+
+---
+
+## PART 7: FINAL STATUS
+
+### Build Verification (Updated)
+✅ Dependencies installed: `npm install` succeeded  
+✅ Package resolution: No ERESOLVE conflicts  
+✅ Type checking: `tsc --noEmit` passes  
+✅ Compilation: `next build` succeeds  
+✅ No remaining TypeScript errors  
+✅ Documentation: `README.md` created  
+✅ Package versions: Properly pinned  
+
+### Deployment Ready (Updated)
+✅ Local development: Errors resolved  
+✅ Type safety: All type annotations correct  
+✅ Accessibility: Keyboard hints labeled  
+✅ Code quality: Logic clarified  
+✅ Build system: Ready for production  
+✅ Documentation: Complete  
+✅ Dependencies: Deterministic versions  
+
+---
+
+## APPENDIX: QUICK REFERENCE (Updated)
+
+### All Imports Fixed
+```
+@/components/CommandPalette.tsx
+  Before: "@/components/modals/Modal" → After: "@/components/modals/modal"
+
+@/components/modals/ConfirmModal.tsx
+  Before: "@/components/modals/Modal" → After: "@/components/modals/modal"
+
+@/components/modals/ServerSelectModal.tsx
+  Before: "@/components/modals/Modal" → After: "@/components/modals/modal"
+
+@/components/ThemePicker.tsx
+  Before: "@/lib/utils/constraints" → After: "@/lib/utils/constants"
+```
+
+### All Dependencies Updated
+```
+next:               15.3.0 → 15.5.15
+eslint-config-next: 15.3.0 → 15.5.15
+@opennextjs/cloudflare: latest → ^1.19.1
+```
+
+### New Files Created
+```
+src/lib/utils/constants.ts (re-export wrapper)
+README.md (project documentation)
 ```
 
 ### Configuration Changes
@@ -900,8 +1301,6 @@ tsconfig.json: Added src/components/modals/Modal.tsx to exclude list
 
 ---
 
-**Report Generated:** April 17, 2026  
-**Total Time to Resolve:** Completed in one session  
-**Status:** ✅ All systems operational
-
-For questions about any of these fixes, refer to the specific issue sections above.
+**Report Updated:** April 17, 2026  
+**Total Issues Fixed:** 13 major issues  
+**Status:** ✅ All systems operational and documented
