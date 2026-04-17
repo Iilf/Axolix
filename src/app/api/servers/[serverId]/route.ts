@@ -34,7 +34,7 @@ export async function GET(
       return notFound("Server")
     }
 
-    const reviews = reviewsResult.data ?? []
+    const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
     const total   = reviews.length
     const average = total > 0
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / total
