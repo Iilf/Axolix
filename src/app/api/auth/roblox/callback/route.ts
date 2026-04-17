@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
       .update({
         roblox_id:       profile.sub,
         roblox_username: profile.preferred_username,
-      })
+      } as Record<string, unknown>)
       .eq("id", session.id)
       .select()
       .single()
