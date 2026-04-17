@@ -18,26 +18,24 @@ export async function GET(
   try {
     const supabase = await getSupabaseServerClient()
 
-    const [serverResult, reviewsResult] = await Promise.all([
-      supabase
-        .from("servers")
-        .select("*")
-        .eq("id", serverId)
-        .single(),
-      supabase
-        .from("server_reviews")
-        .select("rating")
-        .eq("server_id", serverId),
-    ])
+    // Get server data
+    const { data: serverData, error: serverError } = await supabase
+      .from("servers")
+      .select("*")
+      .eq("id", serverId)
+      .single()
 
-    if (serverResult.error || !serverResult.data) {
+    if (serverError || !serverData) {
       return notFound("Server")
     }
 
-    // Type assertion to help TypeScript understand the type
-    const serverData = serverResult.data!
+    // Get reviews data
+    const { data: reviewsData } = await supabase
+      .from("server_reviews")
+      .select("rating")
+      .eq("server_id", serverId)
 
-    const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
+    const reviews = reviewsData ?? [] as Array<{ rating: number }>
     const total   = reviews.length
     const average = total > 0
       ? reviews.reduce((sum, r) => sum + r.rating, 0) / total

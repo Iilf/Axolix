@@ -2,7 +2,7 @@
 **Date:** April 17, 2026  
 **Initial Error Count:** 204 errors  
 **Final Error Count:** 0 errors  
-**Status:** ✅ All issues resolved
+**Status:** ✅ All issues resolved - Build successful
 
 ---
 
@@ -708,26 +708,6 @@ Type error: Property 'rating' does not exist on type 'never'.
 
 **Before:**
 ```typescript
-if (serverResult.error || !serverResult.data) {
-  return notFound("Server")
-}
-
-const serverData = serverResult.data
-```
-
-**After:**
-```typescript
-if (serverResult.error || !serverResult.data) {
-  return notFound("Server")
-}
-
-const serverData = serverResult.data!
-```
-
-**Full Context:**
-```typescript
-const supabase = await getSupabaseServerClient()
-
 const [serverResult, reviewsResult] = await Promise.all([
   supabase
     .from("servers")
@@ -745,17 +725,116 @@ if (serverResult.error || !serverResult.data) {
 }
 
 const serverData = serverResult.data!
-const reviews = reviewsResult.data ?? [] as Array<{ rating: number }>
+```
+
+**After:**
+```typescript
+// Get server data
+const { data: serverData, error: serverError } = await supabase
+  .from("servers")
+  .select("*")
+  .eq("id", serverId)
+  .single()
+
+if (serverError || !serverData) {
+  return notFound("Server")
+}
+
+// Get reviews data
+const { data: reviewsData } = await supabase
+  .from("server_reviews")
+  .select("rating")
+  .eq("server_id", serverId)
+
+const reviews = reviewsData ?? [] as Array<{ rating: number }>
+```
+
+**Full Context:**
+```typescript
+const supabase = await getSupabaseServerClient()
+
+// Get server data
+const { data: serverData, error: serverError } = await supabase
+  .from("servers")
+  .select("*")
+  .eq("id", serverId)
+  .single()
+
+if (serverError || !serverData) {
+  return notFound("Server")
+}
+
+// Get reviews data
+const { data: reviewsData } = await supabase
+  .from("server_reviews")
+  .select("rating")
+  .eq("server_id", serverId)
+
+const reviews = reviewsData ?? [] as Array<{ rating: number }>
 const total   = reviews.length
 const average = total > 0
   ? reviews.reduce((sum, r) => sum + r.rating, 0) / total  // ✅ Now works
   : 0
 ```
 
-#### Why This Works
-- The non-null assertion operator `!` tells TypeScript to trust that the value exists
-- After the conditional check, we know `serverResult.data` is not null/undefined
-- This is a safe assertion since we checked for both error and null data above
+#### Why This Fix Works
+- **Direct destructuring**: Instead of using `Promise.all()` and then accessing `.data` and `.error` properties, we destructure them directly from the query result
+- **Proper type narrowing**: TypeScript can now correctly narrow the types when we check `if (serverError || !serverData)`
+- **Consistent pattern**: This matches the pattern used in other route files throughout the codebase
+- **No type assertions needed**: The direct destructuring eliminates the need for non-null assertions or type casting
+
+### Issue 4.2: Supabase Query Destructuring Type Narrowing Failure
+
+**Severity:** High  
+**Error:** `Property 'data' does not exist on type 'never'`  
+**File:** `src/app/api/servers/[serverId]/route.ts`  
+**Line:** 38
+
+#### Problem
+After the initial fix, the build still failed with the same type narrowing issue. The problem was with how the Supabase query result was being destructured and checked.
+
+**Before:**
+```typescript
+const [serverResult, reviewsResult] = await Promise.all([...])
+
+if (serverResult.error || !serverResult.data) {
+  return notFound("Server")
+}
+
+const serverData = serverResult.data!  // ❌ TypeScript inferred 'never'
+```
+
+#### Root Cause
+- Using `Promise.all()` with array destructuring prevented TypeScript from properly narrowing union types
+- The conditional check `!serverResult.data` couldn't narrow the type because of the array destructuring
+- TypeScript couldn't infer that `serverResult.data` was not `never` after the check
+
+#### Fix Applied
+Changed to direct destructuring pattern used consistently in other route files:
+
+**After:**
+```typescript
+// Get server data
+const { data: serverData, error: serverError } = await supabase
+  .from("servers")
+  .select("*")
+  .eq("id", serverId)
+  .single()
+
+if (serverError || !serverData) {
+  return notFound("Server")
+}
+```
+
+#### Why This Fix Works
+- **Direct destructuring**: Destructuring `data` and `error` directly from the query result allows TypeScript to properly narrow types
+- **Consistent pattern**: Matches the pattern used in `/auth/roblox/callback/route.ts` and other files
+- **Proper type inference**: TypeScript can now correctly narrow the union type after the conditional check
+
+#### Impact
+- Build now passes type checking
+- Consistent with codebase patterns
+- No more type assertion operators needed
 
 #### API Routes Audit
 **Checked all API route files for similar type issues:**
