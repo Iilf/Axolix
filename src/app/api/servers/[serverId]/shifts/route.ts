@@ -50,7 +50,7 @@ export const GET = withAuth<GetShiftsResponse>(async (request, { params }) => {
     const { data, count, error } = await query
     if (error) throw error
 
-    const enriched = (data ?? []).map((shift) => ({
+    const enriched = ((data ?? []) as any[]).map((shift) => ({
       ...shift,
       durationSeconds: shift.ended_at
         ? elapsedSeconds(shift.started_at, shift.ended_at)

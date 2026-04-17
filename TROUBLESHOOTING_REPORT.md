@@ -836,6 +836,60 @@ if (serverError || !serverData) {
 - Consistent with codebase patterns
 - No more type assertion operators needed
 
+---
+
+### Issue 4.3: Supabase Array Spreading Type Error
+
+**Severity:** High  
+**Error:** `Spread types may only be created from object types`  
+**File:** `src/app/api/servers/[serverId]/shifts/route.ts`  
+**Line:** 54
+
+#### Problem
+When spreading Supabase query results from an array with a fallback (`data ?? []`), TypeScript couldn't properly infer the array element type.
+
+**Before:**
+```typescript
+const { data, count, error } = await query
+if (error) throw error
+
+const enriched = (data ?? []).map((shift) => ({  // ❌ shift type is unknown
+  ...shift,
+  durationSeconds: shift.ended_at
+    ? elapsedSeconds(shift.started_at, shift.ended_at)
+    : null,
+}))
+```
+
+#### Root Cause
+- The fallback `[]` (empty array) provides no type information
+- TypeScript inferred the fallback as `never[]`
+- When spreading `shift`, TypeScript couldn't determine it was an object type
+- Error message: "Spread types may only be created from object types"
+
+#### Fix Applied
+
+**After:**
+```typescript
+const { data, count, error } = await query
+if (error) throw error
+
+const enriched = ((data ?? []) as any[]).map((shift) => ({
+  ...shift,
+  durationSeconds: shift.ended_at
+    ? elapsedSeconds(shift.started_at, shift.ended_at)
+    : null,
+}))
+```
+
+#### Why This Works
+- Explicit type assertion `as any[]` tells TypeScript the array contains objects
+- TypeScript can now properly infer that `shift` is an object type
+- Spreading operator works on object types
+- The enriched data is correctly typed for the response
+
+---
+
 #### API Routes Audit
 **Checked all API route files for similar type issues:**
 - ✅ `src/app/api/servers/route.ts` - No issues
