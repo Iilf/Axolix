@@ -97,7 +97,7 @@ export const POST = withAuth<CreateServerResponse>(async (request, { user }) => 
       return NextResponse.json(
         { error: "You must be the owner of this Discord server", code: "NOT_OWNER", status: 403 },
         { status: 403 },
-      ) as NextResponse<CreateServerResponse>
+      ) as unknown as NextResponse<CreateServerResponse>
     }
 
     const iconUrl = buildGuildIconUrl(guild.id, guild.icon ?? null, 128)
