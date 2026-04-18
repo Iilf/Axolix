@@ -1,7 +1,7 @@
 ---
 name: Code Integrity Checker
 description: "Identifies and fixes TypeScript type errors, type safety issues, and code quality problems across the entire codebase. Use when: auditing for type safety, fixing build errors, validating type definitions, or improving type consistency across files."
-tools: Read, Grep, Glob, Bash
+tools: [execute, read, edit, search, agent, web, todo]
 ---
 
 # Code Integrity Checker Agent
