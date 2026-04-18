@@ -1197,23 +1197,22 @@ const { data: user, error: dbError } = await supabase
 
 **After:**
 ```typescript
-const { data: user, error: dbError } = await supabase
-  .from("users")
+const { data: user, error: dbError } = await (supabase.from("users") as any)
   .update({
     roblox_id:       profile.sub,
     roblox_username: profile.preferred_username,
-  } as unknown as any)  // ✅ Double assertion to bypass strict typing
+  })
   .eq("id", session.id)
   .select()
   .single()
 ```
 
 #### Why This Works
-- First assertion `as unknown` bypasses direct type checking
-- Second assertion `as any` allows the operation to proceed
-- This double-assertion pattern is used when a type is legitimately `never` but we know the operation is valid at runtime
-- The Supabase API validates column names at runtime
-- Maintains runtime safety while working around type system limitations
+- Casts the entire `.from()` query builder to `any` to bypass the `never` type constraint
+- The `any` type effectively disables type checking for the entire operation chain
+- Supabase validates column names at runtime, so the operation is still safe
+- This bypasses the type system at the source of the problem (the query builder itself)
+- Runtime behavior is guaranteed by Supabase's validation
 
 ---
 

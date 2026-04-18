@@ -46,12 +46,11 @@ export async function GET(request: NextRequest) {
     // Link Roblox account to the user row
     // Note: roblox_id is NOT unique — multiple Discord accounts can share one Roblox ID
     const supabase = getSupabaseAdminClient()
-    const { data: user, error: dbError } = await supabase
-      .from("users")
+    const { data: user, error: dbError } = await (supabase.from("users") as any)
       .update({
         roblox_id:       profile.sub,
         roblox_username: profile.preferred_username,
-      } as unknown as any)
+      })
       .eq("id", session.id)
       .select()
       .single()
