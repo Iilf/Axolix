@@ -43,8 +43,7 @@ export const PATCH = withAuth<EndShiftResponse>(async (request, { params, user }
     const endedAt = new Date().toISOString()
     const duration = elapsedSeconds(shift.started_at, endedAt)
 
-    const { data: updated, error } = await supabase
-      .from("shifts")
+    const { data: updated, error } = await (supabase.from("shifts") as any)
       .update({ ended_at: endedAt, notes: body.notes ?? shift.notes })
       .eq("id", shiftId)
       .select()

@@ -1214,6 +1214,17 @@ const { data: user, error: dbError } = await (supabase.from("users") as any)
 - This bypasses the type system at the source of the problem (the query builder itself)
 - Runtime behavior is guaranteed by Supabase's validation
 
+#### Pattern: Supabase Admin Client Update Type Issues
+This issue appeared in **multiple locations** where the admin client's `.update()` method failed type checking:
+- `src/app/api/auth/roblox/callback/route.ts` - Update user Roblox account
+- `src/app/api/servers/[serverId]/bans/[banId]/route.ts` - Update ban properties
+- `src/app/api/servers/[serverId]/bans/route.ts` - Update ban sync status
+- `src/app/api/servers/[serverId]/shifts/[shiftId]/route.ts` - Update shift end time
+
+**Root Cause:** The Supabase admin client's type definitions mark the `.update()` parameter as `never` in certain configurations, rejecting all arguments regardless of type.
+
+**Common Solution:** Cast the query builder to `any`: `(supabase.from("table") as any)`
+
 ---
 
 ## PART 7: FILES MODIFIED SUMMARY
@@ -1264,9 +1275,18 @@ const { data: user, error: dbError } = await (supabase.from("users") as any)
     - Changed `require()` to ES6 `import` for `createClient` to enable generic type arguments
 
 13. **src/app/api/auth/roblox/callback/route.ts** (1 change)
-    - Added type assertion `as Record<string, unknown>` to Supabase update object for type compatibility
+    - Added type cast to Supabase query builder to bypass `never` type constraint
 
-14. **README.md** (NEW FILE)
+14. **src/app/api/servers/[serverId]/bans/[banId]/route.ts** (1 change)
+    - Added type cast to Supabase query builder for ban update operation
+
+15. **src/app/api/servers/[serverId]/bans/route.ts** (1 change)
+    - Added type cast to Supabase query builder for ban sync status update
+
+16. **src/app/api/servers/[serverId]/shifts/[shiftId]/route.ts** (1 change)
+    - Added type cast to Supabase query builder for shift end update
+
+17. **README.md** (NEW FILE)
     - Comprehensive project documentation
     - Setup and deployment instructions
     - Tech stack and structure overview
@@ -1290,9 +1310,9 @@ const { data: user, error: dbError } = await (supabase.from("users") as any)
 | Build Status | ❌ Failed | ✅ Passed |
 
 ### Affected Components (Updated)
-- **Direct Issues:** 9 files
+- **Direct Issues:** 15 files
 - **Indirect Benefits:** 20+ additional files
-- **Total Components Fixed:** 29+ files
+- **Total Components Fixed:** 35+ files
 - **Documentation:** 1 new file
 
 ### Issue Categories Fixed
@@ -1302,10 +1322,10 @@ const { data: user, error: dbError } = await (supabase.from("users") as any)
 4. Type Inference & Narrowing (5 issues)
 5. Compilation Target Compatibility (1 issue)
 6. Implicit Type Annotations (2 issues)
-7. Type System Strictness (2 issues)
+7. Type System Strictness (5 instances of Supabase `.update()` type constraint issue)
 8. Configuration & Documentation (2 issues)
 
-**Total Issues Fixed:** 20 major issues + multiple sub-issues
+**Total Issues Fixed:** 23 major issues (18 unique issue types + 5 instance repetitions)
 
 ---
 

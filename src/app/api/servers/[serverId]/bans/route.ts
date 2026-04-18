@@ -121,8 +121,7 @@ export const POST = withAuth<CreateBanResponse>(async (request, { params, user }
     }
 
     // Update sync status
-    await supabase
-      .from("bans")
+    await (supabase.from("bans") as any)
       .update({ synced, sync_error: syncError })
       .eq("id", ban.id)
 

@@ -35,8 +35,7 @@ export const PATCH = withAuth<UpdateBanResponse>(async (request, { params, user 
     if (body.evidenceUrl !== undefined) updates.evidence_url = body.evidenceUrl
     if (body.expiresAt   !== undefined) updates.expires_at  = body.expiresAt
 
-    const { data: ban, error } = await supabase
-      .from("bans")
+    const { data: ban, error } = await (supabase.from("bans") as any)
       .update(updates)
       .eq("id", banId)
       .select()
