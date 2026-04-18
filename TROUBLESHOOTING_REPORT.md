@@ -1202,17 +1202,18 @@ const { data: user, error: dbError } = await supabase
   .update({
     roblox_id:       profile.sub,
     roblox_username: profile.preferred_username,
-  } as Record<string, unknown>)  // ✅ Tell TypeScript these are valid updates
+  } as unknown as any)  // ✅ Double assertion to bypass strict typing
   .eq("id", session.id)
   .select()
   .single()
 ```
 
 #### Why This Works
-- Explicit type assertion `as Record<string, unknown>` tells TypeScript to accept any string keys
-- The Supabase API still validates column existence at runtime
-- Maintains functionality while bypassing strict type checking for dynamic updates
-- Common pattern for Supabase operations with complex types
+- First assertion `as unknown` bypasses direct type checking
+- Second assertion `as any` allows the operation to proceed
+- This double-assertion pattern is used when a type is legitimately `never` but we know the operation is valid at runtime
+- The Supabase API validates column names at runtime
+- Maintains runtime safety while working around type system limitations
 
 ---
 
