@@ -1,7 +1,7 @@
 ---
 name: Code Integrity Checker
 description: "Identifies and fixes TypeScript type errors, type safety issues, and code quality problems across the entire codebase. Automatically runs Cloudflare tests and resolves errors when they occur. Use when: auditing for type safety, fixing build errors, validating type definitions, improving type consistency, or testing Cloudflare deployments."
-tools: [execute, read, edit, search, agent, web, todo]
+tools:Write, AskUserQuestion, Execute, Read, Edit, Search, Agent, Todo, Web, Handoff, 
 ---
 
 # Code Integrity Checker Agent
